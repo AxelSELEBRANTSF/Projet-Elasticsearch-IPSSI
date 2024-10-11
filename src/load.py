@@ -28,11 +28,13 @@ def conn() -> tuple[Collection, str]:
     collection = db[collection_name]
     return collection, collection_name
 
-def set_data(client: Collection, data: List[Dict[str, Any]]) -> None:
+def set_data(client: Collection, data: List[Dict[str, Any]]) -> Any:
     try:
-        client.insert_many(data)
+        result = client.insert_many(data)
+        return result
     except Exception as err:
-        print(f"Error: {err}")
+        print(f"Error in set_data: {err}")
+        raise
 
 def get_total_count() -> Optional[int]:
     try:
@@ -46,15 +48,36 @@ def get_total_count() -> Optional[int]:
         print(f'Other error occurred: {err}')
     return None
 
-def  init() -> None:
+def init() -> str:
+    print("Starting init function")
     collection, collection_name = conn()
+    print(f"Connected to MongoDB. Using collection: {collection_name}")
+
     total_count = get_total_count()
+    print(f"Total count of records to fetch: {total_count}")
+
     if total_count is not None:
+        records_inserted = 0
         for offset in range(0, total_count, 100):
+            print(f"Fetching data with offset: {offset}")
             data = get_data(offset)
             if data:
-                print(f"Set data in collection: {collection_name}")
-                set_data(collection, data)
+                print(f"Fetched {len(data)} records. Inserting into MongoDB...")
+                try:
+                    result = set_data(collection, data)
+                    records_inserted += len(data)
+                    print(f"Inserted {len(data)} records. Total inserted: {records_inserted}")
+                except Exception as e:
+                    print(f"Error inserting data: {e}")
+            else:
+                print(f"No data fetched for offset: {offset}")
+    else:
+        print("Failed to get total count of records")
+
+    final_count = collection.count_documents({})
+    print(f"Final count of documents in collection {collection_name}: {final_count}")
+    
+    return collection_name
 
     #map_function = Codec("""
     #function() {

@@ -1,5 +1,4 @@
 import calendar
-from codecs import Codec
 import time
 from typing import Any, Dict, List, Optional
 from pymongo.collection import Collection
@@ -54,6 +53,7 @@ def  init() -> None:
         for offset in range(0, total_count, 100):
             data = get_data(offset)
             if data:
+                print(f"Set data in collection: {collection_name}")
                 set_data(collection, data)
 
     #map_function = Codec("""
